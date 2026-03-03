@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, Filter, TrendingUp } from "lucide-react";
+import { Filter, TrendingUp } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -32,85 +32,73 @@ export default function Dashboard() {
   const total = questoes?.length ?? 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary">
-              <BookOpen className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-display font-bold text-xl text-foreground tracking-tight">KevQuest</h1>
-              <p className="text-xs text-muted-foreground">Rastreador de Questões</p>
-            </div>
+    <div className="container max-w-6xl mx-auto px-4 py-8 space-y-8">
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display font-bold text-2xl text-foreground">Dashboard</h2>
+          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+            <TrendingUp className="h-4 w-4" />
+            <span className="font-display font-semibold text-foreground">{total}</span>
+            <span>questões registradas</span>
+            {total > 0 && (
+              <>
+                <span>·</span>
+                <span className="text-stage-consolidada font-medium">
+                  {stageCounts.Consolidada} consolidada{stageCounts.Consolidada !== 1 ? "s" : ""}
+                </span>
+              </>
+            )}
           </div>
-          <AddQuestionDialog />
         </div>
-      </header>
+        <AddQuestionDialog />
+      </div>
 
-      <main className="container max-w-6xl mx-auto px-4 py-8 space-y-8">
-        {/* Stats Bar */}
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <TrendingUp className="h-4 w-4" />
-          <span className="font-display font-semibold text-foreground">{total}</span>
-          <span>questões registradas</span>
-          {total > 0 && (
-            <>
-              <span>·</span>
-              <span className="text-stage-consolidada font-medium">
-                {stageCounts.Consolidada} consolidada{stageCounts.Consolidada !== 1 ? "s" : ""}
-              </span>
-            </>
-          )}
+      {/* Funnel Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {ESTAGIO_ORDER.map((stage, i) => (
+          <FunnelCard key={stage} stage={stage} count={stageCounts[stage]} total={total} index={i} />
+        ))}
+      </div>
+
+      {/* Filters + Table */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={filterDisciplina} onValueChange={setFilterDisciplina}>
+            <SelectTrigger className="w-48 h-9">
+              <SelectValue placeholder="Todas disciplinas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas disciplinas</SelectItem>
+              {disciplinas?.map((d) => (
+                <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterEstagio} onValueChange={setFilterEstagio}>
+            <SelectTrigger className="w-44 h-9">
+              <SelectValue placeholder="Todos estágios" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos estágios</SelectItem>
+              {ESTAGIO_ORDER.map((s) => (
+                <SelectItem key={s} value={s}>{ESTAGIO_LABELS[s]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Funnel Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          {ESTAGIO_ORDER.map((stage, i) => (
-            <FunnelCard key={stage} stage={stage} count={stageCounts[stage]} total={total} index={i} />
-          ))}
-        </div>
-
-        {/* Filters + Table */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={filterDisciplina} onValueChange={setFilterDisciplina}>
-              <SelectTrigger className="w-48 h-9">
-                <SelectValue placeholder="Todas disciplinas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas disciplinas</SelectItem>
-                {disciplinas?.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterEstagio} onValueChange={setFilterEstagio}>
-              <SelectTrigger className="w-44 h-9">
-                <SelectValue placeholder="Todos estágios" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos estágios</SelectItem>
-                {ESTAGIO_ORDER.map((s) => (
-                  <SelectItem key={s} value={s}>{ESTAGIO_LABELS[s]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-12 text-muted-foreground">Carregando...</div>
-          ) : (
-            <QuestionsTable
-              questoes={(questoes as any) ?? []}
-              filterDisciplina={filterDisciplina === "all" ? "" : filterDisciplina}
-              filterEstagio={filterEstagio === "all" ? "" : filterEstagio}
-            />
-          )}
-        </div>
-      </main>
+        {isLoading ? (
+          <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+        ) : (
+          <QuestionsTable
+            questoes={(questoes as any) ?? []}
+            filterDisciplina={filterDisciplina === "all" ? "" : filterDisciplina}
+            filterEstagio={filterEstagio === "all" ? "" : filterEstagio}
+          />
+        )}
+      </div>
     </div>
   );
 }
