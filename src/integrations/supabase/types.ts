@@ -61,12 +61,32 @@ export type Database = {
         }
         Relationships: []
       }
+      motivos_erro: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       questoes: {
         Row: {
           comentario: string | null
           conteudo_id: string
           created_at: string
+          data_limite: string | null
           data_resolucao: string
+          diagnostico_motivo_id: string | null
           disciplina_id: string
           estagio_funil: Database["public"]["Enums"]["estagio_funil"]
           id: string
@@ -77,7 +97,9 @@ export type Database = {
           comentario?: string | null
           conteudo_id: string
           created_at?: string
+          data_limite?: string | null
           data_resolucao?: string
+          diagnostico_motivo_id?: string | null
           disciplina_id: string
           estagio_funil?: Database["public"]["Enums"]["estagio_funil"]
           id?: string
@@ -88,7 +110,9 @@ export type Database = {
           comentario?: string | null
           conteudo_id?: string
           created_at?: string
+          data_limite?: string | null
           data_resolucao?: string
+          diagnostico_motivo_id?: string | null
           disciplina_id?: string
           estagio_funil?: Database["public"]["Enums"]["estagio_funil"]
           id?: string
@@ -101,6 +125,13 @@ export type Database = {
             columns: ["conteudo_id"]
             isOneToOne: false
             referencedRelation: "conteudos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questoes_diagnostico_motivo_id_fkey"
+            columns: ["diagnostico_motivo_id"]
+            isOneToOne: false
+            referencedRelation: "motivos_erro"
             referencedColumns: ["id"]
           },
           {

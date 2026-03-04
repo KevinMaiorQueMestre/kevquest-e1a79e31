@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DisciplinaChart } from "@/components/DisciplinaChart";
 import { ConteudoChart } from "@/components/ConteudoChart";
 import { SubTopicoRanking } from "@/components/SubTopicoRanking";
-import { useDisciplinas } from "@/hooks/useKevQuest";
+import { TopRankings } from "@/components/TopRankings";
 
 export type AnaliseView =
   | { type: "disciplinas" }
@@ -52,6 +52,10 @@ export default function Analise() {
         <h2 className="font-display font-bold text-2xl text-foreground">Análise de Erros</h2>
         <p className="text-sm text-muted-foreground">Clique nas barras para navegar pelos detalhes</p>
       </div>
+
+      {/* Top 5 rankings - always visible at top level */}
+      {view.type === "disciplinas" && <TopRankings />}
+
       {breadcrumb()}
       {view.type === "disciplinas" && (
         <DisciplinaChart
