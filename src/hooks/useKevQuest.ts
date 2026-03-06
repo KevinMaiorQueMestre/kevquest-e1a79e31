@@ -186,3 +186,68 @@ export function useDeleteMotivoErro() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["motivos_erro"] }),
   });
 }
+
+export function useUpdateDisciplina() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, nome }: { id: string; nome: string }) => {
+      const { data, error } = await supabase.from("disciplinas").update({ nome }).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["disciplinas"] }),
+  });
+}
+
+export function useDeleteDisciplina() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("disciplinas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["disciplinas"] });
+      queryClient.invalidateQueries({ queryKey: ["conteudos"] });
+      queryClient.invalidateQueries({ queryKey: ["questoes"] });
+    },
+  });
+}
+
+export function useUpdateConteudo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, nome }: { id: string; nome: string }) => {
+      const { data, error } = await supabase.from("conteudos").update({ nome }).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["conteudos"] }),
+  });
+}
+
+export function useDeleteConteudo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("conteudos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conteudos"] });
+      queryClient.invalidateQueries({ queryKey: ["questoes"] });
+    },
+  });
+}
+
+export function useUpdateMotivoErro() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, nome }: { id: string; nome: string }) => {
+      const { data, error } = await supabase.from("motivos_erro").update({ nome }).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["motivos_erro"] }),
+  });
+}

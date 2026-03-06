@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,10 +7,76 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   useDisciplinas, useConteudos, useAddDisciplina, useAddConteudo,
   useMotivosErro, useAddMotivoErro, useDeleteMotivoErro,
+  useUpdateDisciplina, useDeleteDisciplina,
+  useUpdateConteudo, useDeleteConteudo,
+  useUpdateMotivoErro,
 } from "@/hooks/useKevQuest";
 import { toast } from "sonner";
+
+function EditableItem({
+  id, nome, onUpdate, onDelete, deletable = true,
+}: {
+  id: string; nome: string;
+  onUpdate: (id: string, nome: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
+  deletable?: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(nome);
+
+  const handleSave = async () => {
+    if (!value.trim() || value.trim() === nome) { setEditing(false); setValue(nome); return; }
+    try {
+      await onUpdate(id, value.trim());
+      setEditing(false);
+      toast.success("Atualizado!");
+    } catch { toast.error("Erro ao atualizar"); setValue(nome); setEditing(false); }
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-border px-4 py-3">
+      {editing ? (
+        <>
+          <Input value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") { setEditing(false); setValue(nome); } }} className="h-8" autoFocus />
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={handleSave}><Check className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditing(false); setValue(nome); }}><X className="h-3.5 w-3.5" /></Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <span className="font-medium text-foreground">{nome}</span>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary" onClick={() => setEditing(true)}><Pencil className="h-3.5 w-3.5" /></Button>
+            {deletable && onDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                    <AlertDialogDescription>Isso removerá "{nome}" e todos os dados associados. Essa ação não pode ser desfeita.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={async () => { try { await onDelete(id); toast.success("Removido!"); } catch { toast.error("Erro ao remover"); } }}>Excluir</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function Ajustes() {
   const [novaDisciplina, setNovaDisciplina] = useState("");
@@ -25,6 +91,11 @@ export default function Ajustes() {
   const addConteudo = useAddConteudo();
   const addMotivo = useAddMotivoErro();
   const deleteMotivo = useDeleteMotivoErro();
+  const updateDisciplina = useUpdateDisciplina();
+  const deleteDisciplina = useDeleteDisciplina();
+  const updateConteudo = useUpdateConteudo();
+  const deleteConteudo = useDeleteConteudo();
+  const updateMotivo = useUpdateMotivoErro();
 
   const handleAddDisciplina = async () => {
     if (!novaDisciplina.trim()) return;
@@ -53,13 +124,6 @@ export default function Ajustes() {
     } catch { toast.error("Erro ao adicionar motivo"); }
   };
 
-  const handleDeleteMotivo = async (id: string) => {
-    try {
-      await deleteMotivo.mutateAsync(id);
-      toast.success("Motivo removido!");
-    } catch { toast.error("Erro ao remover motivo"); }
-  };
-
   return (
     <div className="container max-w-3xl mx-auto px-4 py-8 space-y-8">
       <div>
@@ -79,9 +143,11 @@ export default function Ajustes() {
           </div>
           <div className="space-y-2">
             {disciplinas?.map((d) => (
-              <div key={d.id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
-                <span className="font-medium text-foreground">{d.nome}</span>
-              </div>
+              <EditableItem
+                key={d.id} id={d.id} nome={d.nome}
+                onUpdate={async (id, nome) => { await updateDisciplina.mutateAsync({ id, nome }); }}
+                onDelete={async (id) => { await deleteDisciplina.mutateAsync(id); }}
+              />
             ))}
             {(!disciplinas || disciplinas.length === 0) && (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhuma disciplina cadastrada</p>
@@ -112,9 +178,11 @@ export default function Ajustes() {
               </div>
               <div className="space-y-2">
                 {conteudos?.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
-                    <span className="text-foreground">{c.nome}</span>
-                  </div>
+                  <EditableItem
+                    key={c.id} id={c.id} nome={c.nome}
+                    onUpdate={async (id, nome) => { await updateConteudo.mutateAsync({ id, nome }); }}
+                    onDelete={async (id) => { await deleteConteudo.mutateAsync(id); }}
+                  />
                 ))}
                 {(!conteudos || conteudos.length === 0) && (
                   <p className="text-sm text-muted-foreground text-center py-4">Nenhum conteúdo nesta disciplina</p>
@@ -125,7 +193,7 @@ export default function Ajustes() {
         </CardContent>
       </Card>
 
-      {/* Motivos de Erro (Diagnóstico) */}
+      {/* Motivos de Erro */}
       <Card>
         <CardHeader><CardTitle className="font-display text-lg">Motivos de Erro (Diagnóstico)</CardTitle></CardHeader>
         <CardContent className="space-y-4">
@@ -138,12 +206,11 @@ export default function Ajustes() {
           </div>
           <div className="space-y-2">
             {motivos?.map((m) => (
-              <div key={m.id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
-                <span className="text-foreground">{m.nome}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => handleDeleteMotivo(m.id)}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <EditableItem
+                key={m.id} id={m.id} nome={m.nome}
+                onUpdate={async (id, nome) => { await updateMotivo.mutateAsync({ id, nome }); }}
+                onDelete={async (id) => { await deleteMotivo.mutateAsync(id); }}
+              />
             ))}
             {(!motivos || motivos.length === 0) && (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhum motivo cadastrado</p>
