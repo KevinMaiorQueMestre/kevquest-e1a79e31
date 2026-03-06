@@ -20,21 +20,21 @@ export type Database = {
           disciplina_id: string
           id: string
           nome: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string
           disciplina_id: string
           id?: string
           nome: string
-          user_id?: string | null
+          user_id?: string
         }
         Update: {
           created_at?: string
           disciplina_id?: string
           id?: string
           nome?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -51,19 +51,19 @@ export type Database = {
           created_at: string
           id: string
           nome: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           nome: string
-          user_id?: string | null
+          user_id?: string
         }
         Update: {
           created_at?: string
           id?: string
           nome?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -72,19 +72,19 @@ export type Database = {
           created_at: string
           id: string
           nome: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           nome: string
-          user_id?: string | null
+          user_id?: string
         }
         Update: {
           created_at?: string
           id?: string
           nome?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -101,7 +101,7 @@ export type Database = {
           id: string
           identificador_prova: string | null
           sub_conteudo: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           comentario?: string | null
@@ -115,7 +115,7 @@ export type Database = {
           id?: string
           identificador_prova?: string | null
           sub_conteudo?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Update: {
           comentario?: string | null
@@ -129,7 +129,7 @@ export type Database = {
           id?: string
           identificador_prova?: string | null
           sub_conteudo?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {

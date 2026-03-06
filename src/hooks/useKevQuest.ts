@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type Disciplina = Tables<"disciplinas">;
 export type Conteudo = Tables<"conteudos">;
@@ -85,9 +86,10 @@ export function useQuestoes() {
 
 export function useAddQuestao() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (questao: QuestaoInsert) => {
-      const { data, error } = await supabase.from("questoes").insert(questao).select().single();
+      const { data, error } = await supabase.from("questoes").insert({ ...questao, user_id: user!.id }).select().single();
       if (error) throw error;
       return data;
     },
@@ -142,9 +144,10 @@ export function useDeleteQuestao() {
 
 export function useAddDisciplina() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (nome: string) => {
-      const { data, error } = await supabase.from("disciplinas").insert({ nome }).select().single();
+      const { data, error } = await supabase.from("disciplinas").insert({ nome, user_id: user!.id }).select().single();
       if (error) throw error;
       return data;
     },
@@ -154,9 +157,10 @@ export function useAddDisciplina() {
 
 export function useAddConteudo() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (conteudo: ConteudoInsert) => {
-      const { data, error } = await supabase.from("conteudos").insert(conteudo).select().single();
+      const { data, error } = await supabase.from("conteudos").insert({ ...conteudo, user_id: user!.id }).select().single();
       if (error) throw error;
       return data;
     },
@@ -166,9 +170,10 @@ export function useAddConteudo() {
 
 export function useAddMotivoErro() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (nome: string) => {
-      const { data, error } = await supabase.from("motivos_erro").insert({ nome }).select().single();
+      const { data, error } = await supabase.from("motivos_erro").insert({ nome, user_id: user!.id }).select().single();
       if (error) throw error;
       return data;
     },
