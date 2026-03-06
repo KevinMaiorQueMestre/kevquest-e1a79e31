@@ -20,18 +20,21 @@ export type Database = {
           disciplina_id: string
           id: string
           nome: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           disciplina_id: string
           id?: string
           nome: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           disciplina_id?: string
           id?: string
           nome?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -48,16 +51,19 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           nome: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           nome?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -66,16 +72,19 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           nome: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           nome?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -92,6 +101,7 @@ export type Database = {
           id: string
           identificador_prova: string | null
           sub_conteudo: string | null
+          user_id: string | null
         }
         Insert: {
           comentario?: string | null
@@ -105,6 +115,7 @@ export type Database = {
           id?: string
           identificador_prova?: string | null
           sub_conteudo?: string | null
+          user_id?: string | null
         }
         Update: {
           comentario?: string | null
@@ -118,6 +129,7 @@ export type Database = {
           id?: string
           identificador_prova?: string | null
           sub_conteudo?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
