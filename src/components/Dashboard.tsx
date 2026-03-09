@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Filter, TrendingUp } from "lucide-react";
 import {
   Select,
@@ -21,15 +21,33 @@ import {
 export default function Dashboard() {
   const [filterDisciplina, setFilterDisciplina] = useState("");
   const [filterEstagio, setFilterEstagio] = useState("");
+  const [filterBanca, setFilterBanca] = useState("");
   const { data: disciplinas } = useDisciplinas();
   const { data: questoes, isLoading } = useQuestoes();
 
+  // Extract unique bancas from questoes
+  const bancas = useMemo(() => {
+    if (!questoes) return [];
+    const set = new Set<string>();
+    for (const q of questoes) {
+      if (q.identificador_prova) set.add(q.identificador_prova);
+    }
+    return Array.from(set).sort();
+  }, [questoes]);
+
+  // Apply banca filter globally for stage counts
+  const filteredByBanca = useMemo(() => {
+    if (!questoes) return [];
+    if (!filterBanca || filterBanca === "all") return questoes;
+    return questoes.filter((q) => q.identificador_prova === filterBanca);
+  }, [questoes, filterBanca]);
+
   const stageCounts = ESTAGIO_ORDER.reduce((acc, stage) => {
-    acc[stage] = questoes?.filter((q) => q.estagio_funil === stage).length ?? 0;
+    acc[stage] = filteredByBanca.filter((q) => q.estagio_funil === stage).length;
     return acc;
   }, {} as Record<EstagioFunil, number>);
 
-  const total = questoes?.length ?? 0;
+  const total = filteredByBanca.length;
 
   return (
     <div className="container max-w-6xl mx-auto px-4 py-8 space-y-8">
@@ -87,13 +105,26 @@ export default function Dashboard() {
               ))}
             </SelectContent>
           </Select>
+          {bancas.length > 0 && (
+            <Select value={filterBanca} onValueChange={setFilterBanca}>
+              <SelectTrigger className="w-44 h-9">
+                <SelectValue placeholder="Todas bancas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas bancas</SelectItem>
+                {bancas.map((b) => (
+                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">Carregando...</div>
         ) : (
           <QuestionsTable
-            questoes={(questoes as any) ?? []}
+            questoes={(filteredByBanca as any) ?? []}
             filterDisciplina={filterDisciplina === "all" ? "" : filterDisciplina}
             filterEstagio={filterEstagio === "all" ? "" : filterEstagio}
           />
