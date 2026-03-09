@@ -9,6 +9,7 @@ import AppLayout from "@/components/AppLayout";
 import Dashboard from "@/components/Dashboard";
 import Analise from "@/pages/Analise";
 import Ajustes from "@/pages/Ajustes";
+import Perfil from "@/pages/Perfil";
 import EstagioDetail from "@/pages/EstagioDetail";
 import Auth from "@/pages/Auth";
 import NotFound from "./pages/NotFound";
