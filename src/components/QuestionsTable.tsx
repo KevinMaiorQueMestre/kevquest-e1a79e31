@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronRight, Edit2, MessageSquare, Trash2, Calendar } from "lucide-react";
+import { ChevronRight, Edit2, MessageSquare, Trash2, Calendar, Phone } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
