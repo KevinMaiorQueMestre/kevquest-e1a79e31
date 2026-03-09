@@ -58,6 +58,7 @@ export function QuestionsTable({ questoes, filterDisciplina, filterEstagio }: Qu
   const updateStage = useUpdateQuestaoStage();
   const updateQuestao = useUpdateQuestao();
   const deleteQuestao = useDeleteQuestao();
+  const sendWhatsApp = useSendWhatsAppReview();
   const [editQuestao, setEditQuestao] = useState<QuestaoWithRelations | null>(null);
   const [editFocus, setEditFocus] = useState<"diagnostico" | "data_limite" | null>(null);
 
