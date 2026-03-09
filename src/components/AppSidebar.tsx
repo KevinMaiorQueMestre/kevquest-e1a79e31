@@ -1,4 +1,4 @@
-import { LayoutDashboard, BarChart3, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, BarChart3, Settings, LogOut, User } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Análise", url: "/analise", icon: BarChart3 },
+  { title: "Perfil", url: "/perfil", icon: User },
   { title: "Ajustes", url: "/ajustes", icon: Settings },
 ];
 

@@ -9,6 +9,7 @@ import AppLayout from "@/components/AppLayout";
 import Dashboard from "@/components/Dashboard";
 import Analise from "@/pages/Analise";
 import Ajustes from "@/pages/Ajustes";
+import Perfil from "@/pages/Perfil";
 import EstagioDetail from "@/pages/EstagioDetail";
 import Auth from "@/pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/" element={<Dashboard />} />
               <Route path="/estagio/:stage" element={<EstagioDetail />} />
               <Route path="/analise" element={<Analise />} />
+              <Route path="/perfil" element={<Perfil />} />
               <Route path="/ajustes" element={<Ajustes />} />
             </Route>
             <Route path="*" element={<NotFound />} />
