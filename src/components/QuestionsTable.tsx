@@ -218,6 +218,27 @@ export function QuestionsTable({ questoes, filterDisciplina, filterEstagio }: Qu
                           <TooltipContent className="max-w-xs">{q.comentario}</TooltipContent>
                         </Tooltip>
                       )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 hover:text-stage-consolidada"
+                            disabled={sendWhatsApp.isPending}
+                            onClick={async () => {
+                              try {
+                                const result = await sendWhatsApp.mutateAsync(q.id);
+                                toast.success(result.message || "Revisão enviada por WhatsApp!");
+                              } catch (err: any) {
+                                toast.error(err?.message || "Erro ao enviar WhatsApp");
+                              }
+                            }}
+                          >
+                            <Phone className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Enviar revisão por WhatsApp</TooltipContent>
+                      </Tooltip>
                       <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => handleDelete(q.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
