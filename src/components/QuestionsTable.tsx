@@ -20,6 +20,7 @@ import {
   useDeleteQuestao,
 } from "@/hooks/useKevQuest";
 import { EditQuestionDialog } from "@/components/EditQuestionDialog";
+import { useSendWhatsAppReview } from "@/hooks/useProfile";
 import { toast } from "sonner";
 
 type QuestaoWithRelations = {
