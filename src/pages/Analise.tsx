@@ -5,6 +5,7 @@ import { DisciplinaChart } from "@/components/DisciplinaChart";
 import { ConteudoChart } from "@/components/ConteudoChart";
 import { SubTopicoRanking } from "@/components/SubTopicoRanking";
 import { TopRankings } from "@/components/TopRankings";
+import { DiagnosticoChart } from "@/components/DiagnosticoChart";
 
 export type AnaliseView =
   | { type: "disciplinas" }
@@ -53,8 +54,13 @@ export default function Analise() {
         <p className="text-sm text-muted-foreground">Clique nas barras para navegar pelos detalhes</p>
       </div>
 
-      {/* Top 5 rankings - always visible at top level */}
-      {view.type === "disciplinas" && <TopRankings />}
+      {/* Diagnóstico chart - always visible at top level */}
+      {view.type === "disciplinas" && (
+        <>
+          <DiagnosticoChart />
+          <TopRankings />
+        </>
+      )}
 
       {breadcrumb()}
       {view.type === "disciplinas" && (
