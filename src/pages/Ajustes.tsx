@@ -16,6 +16,7 @@ import {
   useUpdateDisciplina, useDeleteDisciplina,
   useUpdateConteudo, useDeleteConteudo,
   useUpdateMotivoErro,
+  useProvas, useAddProva, useUpdateProva, useDeleteProva,
 } from "@/hooks/useKevQuest";
 import { toast } from "sonner";
 
@@ -83,10 +84,12 @@ export default function Ajustes() {
   const [selectedDisciplinaId, setSelectedDisciplinaId] = useState("");
   const [novoConteudo, setNovoConteudo] = useState("");
   const [novoMotivo, setNovoMotivo] = useState("");
+  const [novaProva, setNovaProva] = useState("");
 
   const { data: disciplinas } = useDisciplinas();
   const { data: conteudos } = useConteudos(selectedDisciplinaId || undefined);
   const { data: motivos } = useMotivosErro();
+  const { data: provas } = useProvas();
   const addDisciplina = useAddDisciplina();
   const addConteudo = useAddConteudo();
   const addMotivo = useAddMotivoErro();
@@ -96,39 +99,39 @@ export default function Ajustes() {
   const updateConteudo = useUpdateConteudo();
   const deleteConteudo = useDeleteConteudo();
   const updateMotivo = useUpdateMotivoErro();
+  const addProva = useAddProva();
+  const updateProva = useUpdateProva();
+  const deleteProva = useDeleteProva();
 
   const handleAddDisciplina = async () => {
     if (!novaDisciplina.trim()) return;
-    try {
-      await addDisciplina.mutateAsync(novaDisciplina.trim());
-      setNovaDisciplina("");
-      toast.success("Disciplina adicionada!");
-    } catch { toast.error("Erro ao adicionar disciplina"); }
+    try { await addDisciplina.mutateAsync(novaDisciplina.trim()); setNovaDisciplina(""); toast.success("Disciplina adicionada!"); }
+    catch { toast.error("Erro ao adicionar disciplina"); }
   };
 
   const handleAddConteudo = async () => {
     if (!novoConteudo.trim() || !selectedDisciplinaId) return;
-    try {
-      await addConteudo.mutateAsync({ nome: novoConteudo.trim(), disciplina_id: selectedDisciplinaId });
-      setNovoConteudo("");
-      toast.success("Conteúdo adicionado!");
-    } catch { toast.error("Erro ao adicionar conteúdo"); }
+    try { await addConteudo.mutateAsync({ nome: novoConteudo.trim(), disciplina_id: selectedDisciplinaId }); setNovoConteudo(""); toast.success("Conteúdo adicionado!"); }
+    catch { toast.error("Erro ao adicionar conteúdo"); }
   };
 
   const handleAddMotivo = async () => {
     if (!novoMotivo.trim()) return;
-    try {
-      await addMotivo.mutateAsync(novoMotivo.trim());
-      setNovoMotivo("");
-      toast.success("Motivo adicionado!");
-    } catch { toast.error("Erro ao adicionar motivo"); }
+    try { await addMotivo.mutateAsync(novoMotivo.trim()); setNovoMotivo(""); toast.success("Motivo adicionado!"); }
+    catch { toast.error("Erro ao adicionar motivo"); }
+  };
+
+  const handleAddProva = async () => {
+    if (!novaProva.trim()) return;
+    try { await addProva.mutateAsync(novaProva.trim()); setNovaProva(""); toast.success("Prova adicionada!"); }
+    catch { toast.error("Erro ao adicionar prova"); }
   };
 
   return (
     <div className="container max-w-3xl mx-auto px-4 py-8 space-y-8">
       <div>
         <h2 className="font-display font-bold text-2xl text-foreground">Ajustes</h2>
-        <p className="text-sm text-muted-foreground">Gerencie disciplinas, conteúdos e motivos de erro</p>
+        <p className="text-sm text-muted-foreground">Gerencie disciplinas, conteúdos, provas e motivos de erro</p>
       </div>
 
       {/* Disciplinas */}
@@ -137,21 +140,13 @@ export default function Ajustes() {
         <CardContent className="space-y-4">
           <div className="flex gap-2">
             <Input placeholder="Nova disciplina..." value={novaDisciplina} onChange={(e) => setNovaDisciplina(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddDisciplina()} />
-            <Button onClick={handleAddDisciplina} disabled={!novaDisciplina.trim() || addDisciplina.isPending}>
-              <Plus className="h-4 w-4 mr-1" /> Adicionar
-            </Button>
+            <Button onClick={handleAddDisciplina} disabled={!novaDisciplina.trim() || addDisciplina.isPending}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
           </div>
           <div className="space-y-2">
             {disciplinas?.map((d) => (
-              <EditableItem
-                key={d.id} id={d.id} nome={d.nome}
-                onUpdate={async (id, nome) => { await updateDisciplina.mutateAsync({ id, nome }); }}
-                onDelete={async (id) => { await deleteDisciplina.mutateAsync(id); }}
-              />
+              <EditableItem key={d.id} id={d.id} nome={d.nome} onUpdate={async (id, nome) => { await updateDisciplina.mutateAsync({ id, nome }); }} onDelete={async (id) => { await deleteDisciplina.mutateAsync(id); }} />
             ))}
-            {(!disciplinas || disciplinas.length === 0) && (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma disciplina cadastrada</p>
-            )}
+            {(!disciplinas || disciplinas.length === 0) && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma disciplina cadastrada</p>}
           </div>
         </CardContent>
       </Card>
@@ -162,34 +157,36 @@ export default function Ajustes() {
         <CardContent className="space-y-4">
           <Select value={selectedDisciplinaId} onValueChange={setSelectedDisciplinaId}>
             <SelectTrigger><SelectValue placeholder="Selecione uma disciplina..." /></SelectTrigger>
-            <SelectContent>
-              {disciplinas?.map((d) => (
-                <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
-              ))}
-            </SelectContent>
+            <SelectContent>{disciplinas?.map((d) => (<SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>))}</SelectContent>
           </Select>
           {selectedDisciplinaId && (
             <>
               <div className="flex gap-2">
                 <Input placeholder="Novo conteúdo..." value={novoConteudo} onChange={(e) => setNovoConteudo(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddConteudo()} />
-                <Button onClick={handleAddConteudo} disabled={!novoConteudo.trim() || addConteudo.isPending}>
-                  <Plus className="h-4 w-4 mr-1" /> Adicionar
-                </Button>
+                <Button onClick={handleAddConteudo} disabled={!novoConteudo.trim() || addConteudo.isPending}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
               </div>
               <div className="space-y-2">
-                {conteudos?.map((c) => (
-                  <EditableItem
-                    key={c.id} id={c.id} nome={c.nome}
-                    onUpdate={async (id, nome) => { await updateConteudo.mutateAsync({ id, nome }); }}
-                    onDelete={async (id) => { await deleteConteudo.mutateAsync(id); }}
-                  />
-                ))}
-                {(!conteudos || conteudos.length === 0) && (
-                  <p className="text-sm text-muted-foreground text-center py-4">Nenhum conteúdo nesta disciplina</p>
-                )}
+                {conteudos?.map((c) => (<EditableItem key={c.id} id={c.id} nome={c.nome} onUpdate={async (id, nome) => { await updateConteudo.mutateAsync({ id, nome }); }} onDelete={async (id) => { await deleteConteudo.mutateAsync(id); }} />))}
+                {(!conteudos || conteudos.length === 0) && <p className="text-sm text-muted-foreground text-center py-4">Nenhum conteúdo nesta disciplina</p>}
               </div>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Provas */}
+      <Card>
+        <CardHeader><CardTitle className="font-display text-lg">Provas / Bancas</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">Opções que aparecem no campo "Prova" ao registrar uma questão.</p>
+          <div className="flex gap-2">
+            <Input placeholder="Nova prova..." value={novaProva} onChange={(e) => setNovaProva(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddProva()} />
+            <Button onClick={handleAddProva} disabled={!novaProva.trim() || addProva.isPending}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
+          </div>
+          <div className="space-y-2">
+            {provas?.map((p) => (<EditableItem key={p.id} id={p.id} nome={p.nome} onUpdate={async (id, nome) => { await updateProva.mutateAsync({ id, nome }); }} onDelete={async (id) => { await deleteProva.mutateAsync(id); }} />))}
+            {(!provas || provas.length === 0) && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma prova cadastrada</p>}
+          </div>
         </CardContent>
       </Card>
 
@@ -200,21 +197,11 @@ export default function Ajustes() {
           <p className="text-sm text-muted-foreground">Opções que aparecem ao diagnosticar o motivo do erro de uma questão.</p>
           <div className="flex gap-2">
             <Input placeholder="Novo motivo..." value={novoMotivo} onChange={(e) => setNovoMotivo(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddMotivo()} />
-            <Button onClick={handleAddMotivo} disabled={!novoMotivo.trim() || addMotivo.isPending}>
-              <Plus className="h-4 w-4 mr-1" /> Adicionar
-            </Button>
+            <Button onClick={handleAddMotivo} disabled={!novoMotivo.trim() || addMotivo.isPending}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
           </div>
           <div className="space-y-2">
-            {motivos?.map((m) => (
-              <EditableItem
-                key={m.id} id={m.id} nome={m.nome}
-                onUpdate={async (id, nome) => { await updateMotivo.mutateAsync({ id, nome }); }}
-                onDelete={async (id) => { await deleteMotivo.mutateAsync(id); }}
-              />
-            ))}
-            {(!motivos || motivos.length === 0) && (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhum motivo cadastrado</p>
-            )}
+            {motivos?.map((m) => (<EditableItem key={m.id} id={m.id} nome={m.nome} onUpdate={async (id, nome) => { await updateMotivo.mutateAsync({ id, nome }); }} onDelete={async (id) => { await deleteMotivo.mutateAsync(id); }} />))}
+            {(!motivos || motivos.length === 0) && <p className="text-sm text-muted-foreground text-center py-4">Nenhum motivo cadastrado</p>}
           </div>
         </CardContent>
       </Card>

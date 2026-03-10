@@ -1,23 +1,16 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronRight, Edit2, MessageSquare, Trash2, Calendar, Phone } from "lucide-react";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { ChevronRight, Edit2, MessageSquare, Trash2, Calendar, Phone, CheckCircle2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  type EstagioFunil,
-  ESTAGIO_ORDER,
-  ESTAGIO_LABELS,
-  getNextStage,
-  useUpdateQuestaoStage,
-  useUpdateQuestao,
-  useDeleteQuestao,
+  type EstagioFunil, ESTAGIO_ORDER, ESTAGIO_LABELS, getNextStage,
+  useUpdateQuestaoStage, useUpdateQuestao, useDeleteQuestao,
+  useMoveToRefacao, useAdvanceRefacao,
 } from "@/hooks/useKevQuest";
 import { EditQuestionDialog } from "@/components/EditQuestionDialog";
 import { useSendWhatsAppReview } from "@/hooks/useProfile";
@@ -27,6 +20,7 @@ type QuestaoWithRelations = {
   id: string;
   data_resolucao: string;
   identificador_prova: string | null;
+  prova_id?: string | null;
   estagio_funil: EstagioFunil;
   disciplina_id: string;
   conteudo_id: string;
@@ -35,9 +29,14 @@ type QuestaoWithRelations = {
   created_at: string;
   data_limite: string | null;
   diagnostico_motivo_id: string | null;
+  refacao_etapa?: number | null;
+  data_refacao_1?: string | null;
+  data_refacao_2?: string | null;
+  data_refacao_3?: string | null;
   disciplinas: { nome: string } | null;
   conteudos: { nome: string } | null;
   motivos_erro: { nome: string } | null;
+  provas?: { nome: string } | null;
 };
 
 const stageBadgeColors: Record<EstagioFunil, string> = {
@@ -59,6 +58,8 @@ export function QuestionsTable({ questoes, filterDisciplina, filterEstagio }: Qu
   const updateQuestao = useUpdateQuestao();
   const deleteQuestao = useDeleteQuestao();
   const sendWhatsApp = useSendWhatsAppReview();
+  const moveToRefacao = useMoveToRefacao();
+  const advanceRefacao = useAdvanceRefacao();
   const [editQuestao, setEditQuestao] = useState<QuestaoWithRelations | null>(null);
   const [editFocus, setEditFocus] = useState<"diagnostico" | "data_limite" | null>(null);
 
@@ -72,47 +73,50 @@ export function QuestionsTable({ questoes, filterDisciplina, filterEstagio }: Qu
     try {
       await updateStage.mutateAsync({ id, estagio_funil: newStage });
       toast.success(`Movido para ${ESTAGIO_LABELS[newStage]}`);
-    } catch {
-      toast.error("Erro ao atualizar estágio");
-    }
+    } catch { toast.error("Erro ao atualizar estágio"); }
   };
 
-  const handleAdvanceStage = (q: QuestaoWithRelations) => {
+  const handleAdvanceStage = async (q: QuestaoWithRelations) => {
     const next = getNextStage(q.estagio_funil);
     if (!next) return;
 
-    // Quarentena → Diagnostico: open edit with diagnostico focus
+    // Quarentena → Diagnóstico: open edit with diagnostico focus
     if (q.estagio_funil === "Quarentena" && next === "Diagnostico") {
-      // Advance first, then open edit
-      updateStage.mutateAsync({ id: q.id, estagio_funil: next }).then(() => {
-        setEditFocus("diagnostico");
-        setEditQuestao({ ...q, estagio_funil: next });
-        toast.success(`Movido para ${ESTAGIO_LABELS[next]}`);
-      });
+      await updateStage.mutateAsync({ id: q.id, estagio_funil: next });
+      setEditFocus("diagnostico");
+      setEditQuestao({ ...q, estagio_funil: next });
+      toast.success(`Movido para ${ESTAGIO_LABELS[next]}`);
       return;
     }
 
-    // UTI → Refacao: open edit with data_limite focus
+    // UTI → Refação: auto-schedule with 3 dates
     if (q.estagio_funil === "UTI" && next === "Refacao") {
-      updateStage.mutateAsync({ id: q.id, estagio_funil: next }).then(() => {
-        setEditFocus("data_limite");
-        setEditQuestao({ ...q, estagio_funil: next });
-        toast.success(`Movido para ${ESTAGIO_LABELS[next]}`);
-      });
+      try {
+        await moveToRefacao.mutateAsync(q.id);
+        toast.success("Movido para Refação com agendamento automático!");
+      } catch { toast.error("Erro ao agendar refação"); }
       return;
     }
 
-    // Default: just advance
+    // Refação: advance etapa or move to Consolidada
+    if (q.estagio_funil === "Refacao") {
+      try {
+        await advanceRefacao.mutateAsync({ id: q.id, currentEtapa: q.refacao_etapa || 1 });
+        if ((q.refacao_etapa || 1) >= 3) {
+          toast.success("Questão consolidada! 🎉");
+        } else {
+          toast.success(`Etapa ${(q.refacao_etapa || 1) + 1} de refação`);
+        }
+      } catch { toast.error("Erro ao avançar refação"); }
+      return;
+    }
+
     handleStageChange(q.id, next);
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      await deleteQuestao.mutateAsync(id);
-      toast.success("Questão removida");
-    } catch {
-      toast.error("Erro ao remover questão");
-    }
+    try { await deleteQuestao.mutateAsync(id); toast.success("Questão removida"); }
+    catch { toast.error("Erro ao remover questão"); }
   };
 
   if (filtered.length === 0) {
@@ -141,15 +145,18 @@ export function QuestionsTable({ questoes, filterDisciplina, filterEstagio }: Qu
           <TableBody>
             {filtered.map((q, i) => {
               const nextStage = getNextStage(q.estagio_funil);
+              const provaName = q.provas?.nome || q.identificador_prova || "—";
+              const isRefacao = q.estagio_funil === "Refacao";
               return (
                 <TableRow key={q.id} className="animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
                   <TableCell className="text-sm">
                     <div>
                       {format(new Date(q.data_resolucao), "dd/MM/yy", { locale: ptBR })}
-                      {q.data_limite && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(q.data_limite), "dd/MM/yy")}
+                      {isRefacao && q.refacao_etapa && (
+                        <div className="flex items-center gap-1 text-xs text-stage-refacao mt-0.5">
+                          <Badge variant="outline" className="text-[10px] px-1 py-0 border-stage-refacao/30 text-stage-refacao">
+                            Etapa {q.refacao_etapa}/3
+                          </Badge>
                         </div>
                       )}
                     </div>
@@ -158,51 +165,41 @@ export function QuestionsTable({ questoes, filterDisciplina, filterEstagio }: Qu
                   <TableCell>
                     <div>
                       <span>{q.conteudos?.nome}</span>
-                      {q.sub_conteudo && (
-                        <span className="text-xs text-muted-foreground ml-1">· {q.sub_conteudo}</span>
-                      )}
+                      {q.sub_conteudo && <span className="text-xs text-muted-foreground ml-1">· {q.sub_conteudo}</span>}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {q.identificador_prova || "—"}
-                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{provaName}</TableCell>
                   <TableCell>
                     <Select value={q.estagio_funil} onValueChange={(v) => handleStageChange(q.id, v as EstagioFunil)}>
                       <SelectTrigger className={`h-7 w-fit text-xs font-semibold border-0 ${stageBadgeColors[q.estagio_funil]}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {ESTAGIO_ORDER.map((s) => (
-                          <SelectItem key={s} value={s}>{ESTAGIO_LABELS[s]}</SelectItem>
-                        ))}
+                        {ESTAGIO_ORDER.map((s) => (<SelectItem key={s} value={s}>{ESTAGIO_LABELS[s]}</SelectItem>))}
                       </SelectContent>
                     </Select>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      {nextStage && (
+                      {(nextStage || isRefacao) && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleAdvanceStage(q)}
-                            >
-                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleAdvanceStage(q)}>
+                              {isRefacao && (q.refacao_etapa || 1) >= 3
+                                ? <CheckCircle2 className="h-3.5 w-3.5 text-stage-consolidada" />
+                                : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Avançar para {ESTAGIO_LABELS[nextStage]}</TooltipContent>
+                          <TooltipContent>
+                            {isRefacao
+                              ? (q.refacao_etapa || 1) >= 3 ? "Consolidar" : `Avançar para etapa ${(q.refacao_etapa || 1) + 1}`
+                              : `Avançar para ${ESTAGIO_LABELS[nextStage!]}`}
+                          </TooltipContent>
                         </Tooltip>
                       )}
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => { setEditFocus(null); setEditQuestao(q); }}
-                          >
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditFocus(null); setEditQuestao(q); }}>
                             <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
                           </Button>
                         </TooltipTrigger>
@@ -211,29 +208,18 @@ export function QuestionsTable({ questoes, filterDisciplina, filterEstagio }: Qu
                       {q.comentario && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7"><MessageSquare className="h-3.5 w-3.5 text-muted-foreground" /></Button>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">{q.comentario}</TooltipContent>
                         </Tooltip>
                       )}
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 hover:text-stage-consolidada"
-                            disabled={sendWhatsApp.isPending}
+                          <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-stage-consolidada" disabled={sendWhatsApp.isPending}
                             onClick={async () => {
-                              try {
-                                const result = await sendWhatsApp.mutateAsync(q.id);
-                                toast.success(result.message || "Revisão enviada por WhatsApp!");
-                              } catch (err: any) {
-                                toast.error(err?.message || "Erro ao enviar WhatsApp");
-                              }
-                            }}
-                          >
+                              try { const r = await sendWhatsApp.mutateAsync(q.id); toast.success(r.message || "Revisão enviada!"); }
+                              catch (err: any) { toast.error(err?.message || "Erro ao enviar WhatsApp"); }
+                            }}>
                             <Phone className="h-3.5 w-3.5" />
                           </Button>
                         </TooltipTrigger>
