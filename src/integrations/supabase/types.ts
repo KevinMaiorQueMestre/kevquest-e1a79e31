@@ -112,18 +112,44 @@ export type Database = {
         }
         Relationships: []
       }
+      provas: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       questoes: {
         Row: {
           comentario: string | null
           conteudo_id: string
           created_at: string
           data_limite: string | null
+          data_refacao_1: string | null
+          data_refacao_2: string | null
+          data_refacao_3: string | null
           data_resolucao: string
           diagnostico_motivo_id: string | null
           disciplina_id: string
           estagio_funil: Database["public"]["Enums"]["estagio_funil"]
           id: string
           identificador_prova: string | null
+          prova_id: string | null
+          refacao_etapa: number | null
           sub_conteudo: string | null
           user_id: string
         }
@@ -132,12 +158,17 @@ export type Database = {
           conteudo_id: string
           created_at?: string
           data_limite?: string | null
+          data_refacao_1?: string | null
+          data_refacao_2?: string | null
+          data_refacao_3?: string | null
           data_resolucao?: string
           diagnostico_motivo_id?: string | null
           disciplina_id: string
           estagio_funil?: Database["public"]["Enums"]["estagio_funil"]
           id?: string
           identificador_prova?: string | null
+          prova_id?: string | null
+          refacao_etapa?: number | null
           sub_conteudo?: string | null
           user_id?: string
         }
@@ -146,12 +177,17 @@ export type Database = {
           conteudo_id?: string
           created_at?: string
           data_limite?: string | null
+          data_refacao_1?: string | null
+          data_refacao_2?: string | null
+          data_refacao_3?: string | null
           data_resolucao?: string
           diagnostico_motivo_id?: string | null
           disciplina_id?: string
           estagio_funil?: Database["public"]["Enums"]["estagio_funil"]
           id?: string
           identificador_prova?: string | null
+          prova_id?: string | null
+          refacao_etapa?: number | null
           sub_conteudo?: string | null
           user_id?: string
         }
@@ -175,6 +211,13 @@ export type Database = {
             columns: ["disciplina_id"]
             isOneToOne: false
             referencedRelation: "disciplinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questoes_prova_id_fkey"
+            columns: ["prova_id"]
+            isOneToOne: false
+            referencedRelation: "provas"
             referencedColumns: ["id"]
           },
         ]

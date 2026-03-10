@@ -6,6 +6,7 @@ import { ConteudoChart } from "@/components/ConteudoChart";
 import { SubTopicoRanking } from "@/components/SubTopicoRanking";
 import { TopRankings } from "@/components/TopRankings";
 import { DiagnosticoChart } from "@/components/DiagnosticoChart";
+import { ProvaChart } from "@/components/ProvaChart";
 
 export type AnaliseView =
   | { type: "disciplinas" }
@@ -29,18 +30,8 @@ export default function Analise() {
         <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setView({ type: "disciplinas" })}>
           <ArrowLeft className="h-4 w-4" /> Disciplinas
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground"
-          onClick={() =>
-            setView({
-              type: "conteudos",
-              disciplinaId: "",
-              disciplinaNome: view.disciplinaNome,
-            })
-          }
-        >
+        <Button variant="ghost" size="sm" className="text-muted-foreground"
+          onClick={() => setView({ type: "conteudos", disciplinaId: "", disciplinaNome: view.disciplinaNome })}>
           › {view.disciplinaNome}
         </Button>
       </div>
@@ -54,28 +45,23 @@ export default function Analise() {
         <p className="text-sm text-muted-foreground">Clique nas barras para navegar pelos detalhes</p>
       </div>
 
-      {/* Diagnóstico chart - always visible at top level */}
       {view.type === "disciplinas" && (
         <>
-          <DiagnosticoChart />
+          <div className="grid md:grid-cols-2 gap-6">
+            <DiagnosticoChart />
+            <ProvaChart />
+          </div>
           <TopRankings />
         </>
       )}
 
       {breadcrumb()}
       {view.type === "disciplinas" && (
-        <DisciplinaChart
-          onSelect={(id, nome) => setView({ type: "conteudos", disciplinaId: id, disciplinaNome: nome })}
-        />
+        <DisciplinaChart onSelect={(id, nome) => setView({ type: "conteudos", disciplinaId: id, disciplinaNome: nome })} />
       )}
       {view.type === "conteudos" && (
-        <ConteudoChart
-          disciplinaId={view.disciplinaId}
-          disciplinaNome={view.disciplinaNome}
-          onSelect={(id, nome) =>
-            setView({ type: "subtopicos", conteudoId: id, conteudoNome: nome, disciplinaNome: view.disciplinaNome })
-          }
-        />
+        <ConteudoChart disciplinaId={view.disciplinaId} disciplinaNome={view.disciplinaNome}
+          onSelect={(id, nome) => setView({ type: "subtopicos", conteudoId: id, conteudoNome: nome, disciplinaNome: view.disciplinaNome })} />
       )}
       {view.type === "subtopicos" && (
         <SubTopicoRanking conteudoId={view.conteudoId} conteudoNome={view.conteudoNome} />
