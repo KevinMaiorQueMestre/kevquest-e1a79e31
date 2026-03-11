@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/select";
 import {
   useDisciplinas, useConteudos, useAddQuestao, useAddConteudo,
-  useProvas, ESTAGIO_ORDER, ESTAGIO_LABELS,
+  useProvas, useDetalhamentosProva, useAddDetalhamentoProva,
+  ESTAGIO_ORDER, ESTAGIO_LABELS,
 } from "@/hooks/useKevQuest";
 import { toast } from "sonner";
 
@@ -22,6 +23,9 @@ export function AddQuestionDialog() {
   const [conteudoId, setConteudoId] = useState("");
   const [subConteudo, setSubConteudo] = useState("");
   const [provaId, setProvaId] = useState("");
+  const [detalhamentoId, setDetalhamentoId] = useState("");
+  const [newDetalhamento, setNewDetalhamento] = useState("");
+  const [numeroQuestao, setNumeroQuestao] = useState("");
   const [estagio, setEstagio] = useState<string>("Quarentena");
   const [comentario, setComentario] = useState("");
   const [newConteudo, setNewConteudo] = useState("");
@@ -29,8 +33,10 @@ export function AddQuestionDialog() {
   const { data: disciplinas } = useDisciplinas();
   const { data: conteudos } = useConteudos(disciplinaId || undefined);
   const { data: provas } = useProvas();
+  const { data: detalhamentos } = useDetalhamentosProva(provaId && provaId !== "none" ? provaId : undefined);
   const addQuestao = useAddQuestao();
   const addConteudo = useAddConteudo();
+  const addDetalhamento = useAddDetalhamentoProva();
 
   const handleAddConteudo = async () => {
     if (!newConteudo.trim() || !disciplinaId) return;
@@ -42,6 +48,16 @@ export function AddQuestionDialog() {
     } catch { toast.error("Erro ao adicionar conteúdo"); }
   };
 
+  const handleAddDetalhamento = async () => {
+    if (!newDetalhamento.trim() || !provaId || provaId === "none") return;
+    try {
+      const result = await addDetalhamento.mutateAsync({ nome: newDetalhamento.trim(), prova_id: provaId });
+      setDetalhamentoId(result.id);
+      setNewDetalhamento("");
+      toast.success("Detalhamento adicionado!");
+    } catch { toast.error("Erro ao adicionar detalhamento"); }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!disciplinaId || !conteudoId) { toast.error("Selecione disciplina e conteúdo"); return; }
@@ -51,9 +67,11 @@ export function AddQuestionDialog() {
         conteudo_id: conteudoId,
         sub_conteudo: subConteudo || null,
         prova_id: provaId && provaId !== "none" ? provaId : null,
+        detalhamento_prova_id: detalhamentoId && detalhamentoId !== "none" ? detalhamentoId : null,
+        numero_questao: numeroQuestao || null,
         estagio_funil: estagio as any,
         comentario: comentario || null,
-      });
+      } as any);
       toast.success("Questão registrada!");
       setOpen(false);
       resetForm();
@@ -62,7 +80,8 @@ export function AddQuestionDialog() {
 
   const resetForm = () => {
     setDisciplinaId(""); setConteudoId(""); setSubConteudo("");
-    setProvaId(""); setEstagio("Quarentena"); setComentario("");
+    setProvaId(""); setDetalhamentoId(""); setNewDetalhamento("");
+    setNumeroQuestao(""); setEstagio("Quarentena"); setComentario("");
   };
 
   return (
@@ -114,16 +133,40 @@ export function AddQuestionDialog() {
               <Input value={subConteudo} onChange={(e) => setSubConteudo(e.target.value)} placeholder="Ex: Resistores" />
             </div>
             <div className="space-y-2">
-              <Label>Prova</Label>
-              <Select value={provaId} onValueChange={setProvaId}>
-                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {provas?.map((p) => (<SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>))}
-                </SelectContent>
-              </Select>
+              <Label>Nº da Questão</Label>
+              <Input value={numeroQuestao} onChange={(e) => setNumeroQuestao(e.target.value)} placeholder="Ex: 42" />
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label>Prova</Label>
+            <Select value={provaId} onValueChange={(v) => { setProvaId(v); setDetalhamentoId(""); }}>
+              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhuma</SelectItem>
+                {provas?.map((p) => (<SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {provaId && provaId !== "none" && (
+            <div className="space-y-2">
+              <Label>Detalhamento da Prova</Label>
+              <div className="flex gap-2">
+                <Select value={detalhamentoId} onValueChange={setDetalhamentoId}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    {detalhamentos?.map((d) => (<SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-1">
+                  <Input placeholder="Novo..." value={newDetalhamento} onChange={(e) => setNewDetalhamento(e.target.value)} className="w-28" />
+                  <Button type="button" variant="outline" size="icon" onClick={handleAddDetalhamento} disabled={!newDetalhamento.trim()}><Plus className="h-3 w-3" /></Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Comentário</Label>

@@ -77,7 +77,7 @@ export default function EstagioDetail() {
           {ESTAGIO_LABELS[estagio]}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {stageQuestoes.length} questão{stageQuestoes.length !== 1 ? "ões" : ""} neste estágio
+          {stageQuestoes.length} {stageQuestoes.length !== 1 ? "questões" : "questão"} neste estágio
         </p>
       </div>
 

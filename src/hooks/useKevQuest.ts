@@ -36,7 +36,7 @@ export function addBusinessDays(start: Date, days: number): Date {
   let added = 0;
   while (added < days) {
     result.setDate(result.getDate() + 1);
-    if (result.getDay() !== 0) added++; // skip Sunday (0)
+    if (result.getDay() !== 0) added++;
   }
   return result;
 }
@@ -67,10 +67,9 @@ export function useDisciplinas() {
 
 export function useAddDisciplina() {
   const qc = useQueryClient();
-  const { user } = useAuth();
   return useMutation({
     mutationFn: async (nome: string) => {
-      const { data, error } = await supabase.from("disciplinas").insert({ nome, user_id: user!.id }).select().single();
+      const { data, error } = await supabase.from("disciplinas").insert({ nome }).select().single();
       if (error) throw error;
       return data;
     },
@@ -121,10 +120,9 @@ export function useConteudos(disciplinaId?: string) {
 
 export function useAddConteudo() {
   const qc = useQueryClient();
-  const { user } = useAuth();
   return useMutation({
     mutationFn: async (conteudo: ConteudoInsert) => {
-      const { data, error } = await supabase.from("conteudos").insert({ ...conteudo, user_id: user!.id }).select().single();
+      const { data, error } = await supabase.from("conteudos").insert(conteudo).select().single();
       if (error) throw error;
       return data;
     },
@@ -172,10 +170,9 @@ export function useMotivosErro() {
 
 export function useAddMotivoErro() {
   const qc = useQueryClient();
-  const { user } = useAuth();
   return useMutation({
     mutationFn: async (nome: string) => {
-      const { data, error } = await supabase.from("motivos_erro").insert({ nome, user_id: user!.id }).select().single();
+      const { data, error } = await supabase.from("motivos_erro").insert({ nome }).select().single();
       if (error) throw error;
       return data;
     },
@@ -220,10 +217,9 @@ export function useProvas() {
 
 export function useAddProva() {
   const qc = useQueryClient();
-  const { user } = useAuth();
   return useMutation({
     mutationFn: async (nome: string) => {
-      const { data, error } = await supabase.from("provas").insert({ nome, user_id: user!.id }).select().single();
+      const { data, error } = await supabase.from("provas").insert({ nome }).select().single();
       if (error) throw error;
       return data;
     },
@@ -257,6 +253,39 @@ export function useDeleteProva() {
   });
 }
 
+// ─── Detalhamentos de Prova ───
+export function useDetalhamentosProva(provaId?: string) {
+  return useQuery({
+    queryKey: ["detalhamentos_prova", provaId],
+    enabled: !!provaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("detalhamentos_prova")
+        .select("*")
+        .eq("prova_id", provaId!)
+        .order("nome");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useAddDetalhamentoProva() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ nome, prova_id }: { nome: string; prova_id: string }) => {
+      const { data, error } = await supabase
+        .from("detalhamentos_prova")
+        .insert({ nome, prova_id })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["detalhamentos_prova"] }),
+  });
+}
+
 // ─── Questões ───
 export function useQuestoes() {
   return useQuery({
@@ -274,10 +303,9 @@ export function useQuestoes() {
 
 export function useAddQuestao() {
   const qc = useQueryClient();
-  const { user } = useAuth();
   return useMutation({
     mutationFn: async (questao: QuestaoInsert) => {
-      const { data, error } = await supabase.from("questoes").insert({ ...questao, user_id: user!.id }).select().single();
+      const { data, error } = await supabase.from("questoes").insert(questao).select().single();
       if (error) throw error;
       return data;
     },
@@ -338,7 +366,6 @@ export function useAdvanceRefacao() {
   return useMutation({
     mutationFn: async ({ id, currentEtapa }: { id: string; currentEtapa: number }) => {
       if (currentEtapa >= 3) {
-        // Move to Consolidada
         const { data, error } = await supabase
           .from("questoes")
           .update({ estagio_funil: "Consolidada" as any, refacao_etapa: null })

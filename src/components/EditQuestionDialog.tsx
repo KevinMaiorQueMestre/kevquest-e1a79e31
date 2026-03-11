@@ -1,17 +1,15 @@
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   useDisciplinas, useConteudos, useMotivosErro, useProvas, useUpdateQuestao,
+  useDetalhamentosProva, useAddDetalhamentoProva,
   ESTAGIO_ORDER, ESTAGIO_LABELS, type EstagioFunil,
 } from "@/hooks/useKevQuest";
 import { toast } from "sonner";
@@ -24,14 +22,15 @@ interface EditQuestionDialogProps {
     sub_conteudo: string | null;
     identificador_prova: string | null;
     prova_id?: string | null;
+    detalhamento_prova_id?: string | null;
+    numero_questao?: string | null;
     estagio_funil: EstagioFunil;
     comentario: string | null;
-    data_limite: string | null;
     diagnostico_motivo_id: string | null;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  focusField?: "diagnostico" | "data_limite" | null;
+  focusField?: "diagnostico" | null;
 }
 
 export function EditQuestionDialog({ questao, open, onOpenChange, focusField }: EditQuestionDialogProps) {
@@ -39,16 +38,20 @@ export function EditQuestionDialog({ questao, open, onOpenChange, focusField }: 
   const [conteudoId, setConteudoId] = useState("");
   const [subConteudo, setSubConteudo] = useState("");
   const [provaId, setProvaId] = useState("");
+  const [detalhamentoId, setDetalhamentoId] = useState("");
+  const [newDetalhamento, setNewDetalhamento] = useState("");
+  const [numeroQuestao, setNumeroQuestao] = useState("");
   const [estagio, setEstagio] = useState<string>("Quarentena");
   const [comentario, setComentario] = useState("");
-  const [dataLimite, setDataLimite] = useState<Date | undefined>();
   const [motivoId, setMotivoId] = useState("");
 
   const { data: disciplinas } = useDisciplinas();
   const { data: conteudos } = useConteudos(disciplinaId || undefined);
   const { data: motivos } = useMotivosErro();
   const { data: provas } = useProvas();
+  const { data: detalhamentos } = useDetalhamentosProva(provaId && provaId !== "none" ? provaId : undefined);
   const updateQuestao = useUpdateQuestao();
+  const addDetalhamento = useAddDetalhamentoProva();
 
   useEffect(() => {
     if (questao) {
@@ -56,12 +59,23 @@ export function EditQuestionDialog({ questao, open, onOpenChange, focusField }: 
       setConteudoId(questao.conteudo_id);
       setSubConteudo(questao.sub_conteudo || "");
       setProvaId(questao.prova_id || "");
+      setDetalhamentoId(questao.detalhamento_prova_id || "");
+      setNumeroQuestao(questao.numero_questao || "");
       setEstagio(questao.estagio_funil);
       setComentario(questao.comentario || "");
-      setDataLimite(questao.data_limite ? new Date(questao.data_limite) : undefined);
       setMotivoId(questao.diagnostico_motivo_id || "");
     }
   }, [questao]);
+
+  const handleAddDetalhamento = async () => {
+    if (!newDetalhamento.trim() || !provaId || provaId === "none") return;
+    try {
+      const result = await addDetalhamento.mutateAsync({ nome: newDetalhamento.trim(), prova_id: provaId });
+      setDetalhamentoId(result.id);
+      setNewDetalhamento("");
+      toast.success("Detalhamento adicionado!");
+    } catch { toast.error("Erro ao adicionar detalhamento"); }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,9 +87,10 @@ export function EditQuestionDialog({ questao, open, onOpenChange, focusField }: 
         conteudo_id: conteudoId,
         sub_conteudo: subConteudo || null,
         prova_id: provaId && provaId !== "none" ? provaId : null,
+        detalhamento_prova_id: detalhamentoId && detalhamentoId !== "none" ? detalhamentoId : null,
+        numero_questao: numeroQuestao || null,
         estagio_funil: estagio,
         comentario: comentario || null,
-        data_limite: dataLimite ? dataLimite.toISOString() : null,
         diagnostico_motivo_id: motivoId && motivoId !== "none" ? motivoId : null,
       });
       toast.success("Questão atualizada!");
@@ -119,16 +134,40 @@ export function EditQuestionDialog({ questao, open, onOpenChange, focusField }: 
               <Input value={subConteudo} onChange={(e) => setSubConteudo(e.target.value)} placeholder="Ex: Resistores" />
             </div>
             <div className="space-y-2">
-              <Label>Prova</Label>
-              <Select value={provaId} onValueChange={setProvaId}>
-                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {provas?.map((p) => (<SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>))}
-                </SelectContent>
-              </Select>
+              <Label>Nº da Questão</Label>
+              <Input value={numeroQuestao} onChange={(e) => setNumeroQuestao(e.target.value)} placeholder="Ex: 42" />
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label>Prova</Label>
+            <Select value={provaId} onValueChange={(v) => { setProvaId(v); setDetalhamentoId(""); }}>
+              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhuma</SelectItem>
+                {provas?.map((p) => (<SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {provaId && provaId !== "none" && (
+            <div className="space-y-2">
+              <Label>Detalhamento da Prova</Label>
+              <div className="flex gap-2">
+                <Select value={detalhamentoId} onValueChange={setDetalhamentoId}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    {detalhamentos?.map((d) => (<SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-1">
+                  <Input placeholder="Novo..." value={newDetalhamento} onChange={(e) => setNewDetalhamento(e.target.value)} className="w-28" />
+                  <Button type="button" variant="outline" size="icon" onClick={handleAddDetalhamento} disabled={!newDetalhamento.trim()}><Plus className="h-3 w-3" /></Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Diagnóstico */}
           <div className={cn("space-y-2 rounded-lg p-3 -mx-3", focusField === "diagnostico" && "bg-stage-diagnostico/10 border border-stage-diagnostico/30")}>
@@ -140,22 +179,6 @@ export function EditQuestionDialog({ questao, open, onOpenChange, focusField }: 
                 {motivos?.map((m) => (<SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Data Limite */}
-          <div className={cn("space-y-2 rounded-lg p-3 -mx-3", focusField === "data_limite" && "bg-stage-refacao/10 border border-stage-refacao/30")}>
-            <Label className={focusField === "data_limite" ? "text-stage-refacao font-semibold" : ""}>Data limite para refação</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dataLimite && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dataLimite ? format(dataLimite, "dd/MM/yyyy") : "Selecione uma data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={dataLimite} onSelect={setDataLimite} className="p-3 pointer-events-auto" />
-              </PopoverContent>
-            </Popover>
           </div>
 
           <div className="space-y-2">
