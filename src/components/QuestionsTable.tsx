@@ -61,7 +61,7 @@ export function QuestionsTable({ questoes, filterDisciplina, filterEstagio }: Qu
   const moveToRefacao = useMoveToRefacao();
   const advanceRefacao = useAdvanceRefacao();
   const [editQuestao, setEditQuestao] = useState<QuestaoWithRelations | null>(null);
-  const [editFocus, setEditFocus] = useState<"diagnostico" | "data_limite" | null>(null);
+  const [editFocus, setEditFocus] = useState<"diagnostico" | null>(null);
 
   const filtered = questoes.filter((q) => {
     if (filterDisciplina && q.disciplina_id !== filterDisciplina) return false;
